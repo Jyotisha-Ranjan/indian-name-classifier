@@ -1,0 +1,14 @@
+# Ignore large model files
+indian_name_model.keras
+char_to_index.pkl
+max_len.pkl
+indian_nonindian_names_200k.csv
+indian_nonindian_names_updated.csv
+
+# Ignore Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Ignore VS Code settings
+.vscode/
