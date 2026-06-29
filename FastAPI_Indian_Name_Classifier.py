@@ -1,11 +1,10 @@
-# STEP 1 — Import libraries
-from flask import Flask, request, jsonify
+from fastapi import FastAPI
+from pydantic import BaseModel
 import numpy as np
 import pickle
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 
-# Load the trained LSTM model
 model = load_model('indian_name_model.keras')
 print("Model loaded successfully!")
 
@@ -13,13 +12,14 @@ with open('char_to_index.pkl', 'rb') as f:
     char_to_index = pickle.load(f)
 print("Dictionary loaded successfully!")
 
-
 with open('max_len.pkl', 'rb') as f:
     MAX_LEN = pickle.load(f)
 print("MAX_LEN loaded successfully!")
 
+app = FastAPI()
 
-app = Flask(__name__)
+class NameInput(BaseModel):
+    name: str
 
 def predict_name(name):
     name = name.strip()
@@ -31,7 +31,7 @@ def predict_name(name):
         maxlen=MAX_LEN,
         padding='post'
     )
-    
+
     prediction = model.predict(name_padded, verbose=0)[0][0]
 
     if prediction > 0.5:
@@ -47,47 +47,29 @@ def predict_name(name):
             "confidence": f"{(1 - prediction) * 100:.2f}%"
         }
 
-# Endpoint 1 — Home route
-# Just to check if API is running
-@app.route('/', methods=['GET'])
+#Home route
+@app.get("/")
 def home():
-    return jsonify({
+    return {
         "message": "Indian Name Classifier API is running!",
         "usage": "Send POST request to /predict with name"
-    })
+    }
 
-# Endpoint 2 — Predict route
-# Main endpoint to predict name
-@app.route('/predict', methods=['POST'])
-def predict():
+#Predict route
+@app.post("/predict")
+def predict(data: NameInput):
     try:
-        data = request.get_json()
-
-        if 'name' not in data:
-            return jsonify({
-                "error": "Please provide a name!",
-                "example": {"name": "Rajesh Kumar"}
-            }), 400
-
-        name = data['name']
+        name = data.name
 
         if not name or name.strip() == '':
-            return jsonify({
-                "error": "Name cannot be empty!"
-            }), 400
+            return {"error": "Name cannot be empty!"}
 
         result = predict_name(name)
-
-        return jsonify(result), 200
+        return result
 
     except Exception as e:
-        return jsonify({
-            "error": str(e)
-        }), 500
+        return {"error": str(e)}
 
 if __name__ == '__main__':
-    app.run(
-        host='0.0.0.0',
-        port=5000,
-        debug=True
-    )
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
