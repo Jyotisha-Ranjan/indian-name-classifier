@@ -1,7 +1,4 @@
-# Ignore large model files
-indian_name_model.keras
-char_to_index.pkl
-max_len.pkl
+# Ignore large dataset files only
 indian_nonindian_names_200k.csv
 indian_nonindian_names_updated.csv
 
